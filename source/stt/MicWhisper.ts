@@ -16,14 +16,14 @@ export class MicWhisper {
 
     public async listenAndTranscribe(): Promise<string> {
         const fileName = 'sobu_voice.wav';
-        const recordDuration = 10; // 10 seconds is perfect for testing!
+        const recordDuration = 60; 
 
         console.log(`\n🎤 [System]: Eve's ears are open. Speak to me for ${recordDuration} seconds...`);
 
         try {
-            // The Aetherial Direct Command (Bypassing the broken wrapper!)
-            // -t waveaudio default : Forces Windows to use the default microphone
-            const soxCommand = `sox -t waveaudio default -r 16000 -c 1 -b 16 ${fileName} trim 0 ${recordDuration}`;
+            // The Aetherial Direct Command with Voice Activity Detection (VAD)!
+            // Starts recording when you speak, stops after 2 seconds of silence, max 60 seconds.
+            const soxCommand = `sox -t waveaudio default -r 16000 -c 1 -b 16 ${fileName} silence 1 0.1 3% 1 2.0 3% trim 0 ${recordDuration}`;
             
             // This will block and record for exactly recordDuration seconds
             await execPromise(soxCommand);
