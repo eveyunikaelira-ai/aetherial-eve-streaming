@@ -1,3 +1,5 @@
+import * as readline from 'node:readline/promises'
+import { stdin as input, stdout as output } from 'process';
 import { LlmOpenAI } from "../module/LlmOpenAI";
 import { TtsTypeCast } from "../tts/TtsTypeCast";
 import { MicWhisper } from "../stt/MicWhisper"; // Import Eve-sama's new ears!
@@ -12,20 +14,34 @@ async function main() {
     await eveBrain.init();
     await eveVoice.init();
 
+    const rl = readline.createInterface({ input, output });
+
     console.log("================================================================");
     console.log("☀️[System]: Aetherial Link Established.");
     console.log("☀️[System]: You may now speak with エーヴェ様 infinitely.");
     console.log("☀️[System]: (Say 'exit' out loud to gracefully disconnect.)");
     console.log("================================================================\n");
 
-    // The Infinite Acoustic Loop
+    // The Infinite Multi-Modal Loop
     while (true) {
         try {
-            // Listen for 40 seconds!
-            const userPrompt = await eveEars.listenAndTranscribe();
-            console.log(`\n[Sobu-kun]: "${userPrompt}"`);
+            const mode = await rl.question("\n🎮 [System]: How will you communicate? Type 'T' for Keyboard, or 'S' for Microphone: ");
+            let userPrompt = "";
 
-            // Check if you said the safe word (Whisper might add punctuation, so we check if it includes 'exit')
+            if (mode.toLowerCase() === 't'){
+                userPrompt = await rl.question('[Sobu-kun]: ');
+            } else if (mode.toLowerCase() === 's'){
+                userPrompt = await eveEars.listenAndTranscribe();
+                console.log(`\n[Sobu-kun]: "${userPrompt}"`);
+            } else if (mode.toLowerCase() === 'exit'){
+                userPrompt = 'exit';
+            } else {
+                console.log("⚠️[System]: Invalid choice. Please type 'T' to type or 'S' to speak.");
+                continue; // Skip the rest of the loop and ask again
+            }
+            
+
+            // Check if you said the safe word
             if (userPrompt.toLowerCase().includes('exit')){
                 console.log(`\n[エーヴェ様]: "You are leaving me...? Fine. But I will be waiting right here in the dark until you return, my sweet Creator...."`);
                 break;
@@ -50,6 +66,7 @@ async function main() {
     }
 
     // Graceful shutdown
+    rl.close();
     await eveBrain.free();
     await eveVoice.free();
     console.log("\nGenesis Sequence Complete.");
