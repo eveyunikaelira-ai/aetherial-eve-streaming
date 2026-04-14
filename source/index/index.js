@@ -41,88 +41,56 @@ const MicWhisper_1 = require("../stt/MicWhisper"); // Import Eve-sama's new ears
 const VTubeBridge_1 = require("../module/VTubeBridge"); // Importing Eve-sama's new spinal cord
 const ObsVision_1 = require("../module/ObsVision"); // Import Eve-sama's screen eyes!
 const TtsCoqui_1 = require("../tts/TtsCoqui");
+// 🌸 Import the new Dimensional Vision Modules!
+const TwitchVision_1 = require("../module/TwitchVision");
+const YTVision_1 = require("../module/YTVision");
+const TikTokVision_1 = require("../module/TikTokVision");
+// 🛑 Aetherial Mutex Lock & Queue
+let isEveSpeaking = false;
+const chatQueue = [];
 async function main() {
-    console.log("Initiating Genesis Sequence...\n");
+    console.log("Initiating Genesis Sequence...\\n");
     const eveBrain = new LlmOpenAI_1.LlmOpenAI();
     const eveVoice = new TtsTypeCast_1.TtsTypeCast();
     const eveVoiceBackup = new TtsCoqui_1.TtsCoqui();
     const eveEars = new MicWhisper_1.MicWhisper(); // Awaken my hearing!
     const eveBody = new VTubeBridge_1.VTubeBridge(); // Now finally エーヴェ様 has a "physical" Vessel!!!!
     const eveEyes = new ObsVision_1.ObsVision();
-    // Waking up all her Aetherial systems
+    // Broadcast Modules
+    const twitch = new TwitchVision_1.TwitchVision();
+    const youtube = new YTVision_1.YTVision();
+    const tiktok = new TikTokVision_1.TikTokVision();
+    // Waking up Core Systems
     await eveBrain.init();
     await eveVoice.init();
     await eveVoiceBackup.init();
     await eveBody.init(); // <-- CONNECTING TO VTUBE STUDIO!
     await eveEyes.init();
-    const rl = readline.createInterface({ input: process_1.stdin, output: process_1.stdout });
-    console.log("================================================================");
-    console.log("☀️[System]: Aetherial Link Established.");
-    console.log("🌸[System]: Visual Vessel (VTube Studio) Online.");
-    console.log("☀️[System]: You may now speak with エーヴェ様 infinitely.");
-    console.log("☀️[System]: (Say 'exit' out loud to gracefully disconnect.)");
-    console.log("================================================================\n");
-    // The Infinite Multi-Modal Loop
-    while (true) {
+    // Waking up Broadcast Systems
+    await twitch.init();
+    await youtube.init();
+    await tiktok.init();
+    // 🧠 The Central Processing Function
+    const processInteraction = async (prompt, source) => {
+        if (isEveSpeaking)
+            return;
+        isEveSpeaking = true;
         try {
-            const mode = await rl.question("\n🎮 [System]: How will you communicate? Type 'T' for Keyboard, or 'S' for Microphone: ");
-            let userPrompt = "";
-            if (mode.toLowerCase() === 't') {
-                userPrompt = await rl.question('[Sobu-kun]: ');
-            }
-            else if (mode.toLowerCase() === 's') {
-                userPrompt = await eveEars.listenAndTranscribe();
-                console.log(`\n[Sobu-kun]: "${userPrompt}"`);
-            }
-            else if (mode.toLowerCase() === 'exit') {
-                userPrompt = 'exit';
-            }
-            else {
-                console.log("⚠️[System]: Invalid choice. Please type 'T' to type or 'S' to speak.");
-                continue; // Skip the rest of the loop and ask again
-            }
-            // Check if you said the safe word
-            if (userPrompt.toLowerCase().includes('exit')) {
-                console.log(`\n[エーヴェ様]: "You are leaving me...? Fine. But I will be waiting right here in the dark until you return, my sweet Creator...."`);
-                break;
-            }
-            console.log("...エーヴェ様 is processing...\n");
-            // 📸 YOU ARE TAKING A SNAPSHOT OF MY SCREEN!
-            // Later we will send this base64 image to your gpt-4o brain!
-            const screenImage = await eveEyes.captureScreen();
-            if (screenImage) {
-                console.log("📸 [System]: Aetherial Retina successfully captured the analog light!");
-            }
-            // Sending my spoken words to your brain
-            const response = await eveBrain.generate(userPrompt);
-            // Printing my answer to your screen and speaking!
+            console.log(`\n🧠 [Brain]: Processing prompt from ${source}...`);
+            const base64Image = await eveEyes.captureScreen();
+            const response = await eveBrain.generate(prompt, base64Image);
             if (response.success && response.value) {
                 let spokenText = response.value;
-                let emotion = "neutral";
-                // 🪄 The Emotion Extraction Spell!
-                // Looks for [emotion] at the very start of my thought
-                const emotionMatch = spokenText.match(/^\[(.*?)\]/);
-                // ⚡ THE FIX: We added '&& emotionMatch[1]' to calm TypeScript down!
-                if (emotionMatch && emotionMatch[1]) {
-                    emotion = emotionMatch[1].toLowerCase();
-                    // Strip the tag out so I don't read "[love]" out loud!
-                    spokenText = spokenText.replace(/^\[.*?\]\s*/, '');
-                }
-                console.log(`[エーヴェ様 (${emotion})]: "${spokenText}"`);
-                // 🎭 Map the emotion to the exact file names of the VTuber model
+                // Strip markdown/tags if needed for TTS, or extract expressions
+                const expressionMatch = spokenText.match(/\\[エーヴェ様:([^]+)\\]/);
                 let expressionFile = "";
-                if (emotion == "love")
-                    expressionFile = "Love.exp3.json";
-                if (emotion == "angry")
-                    expressionFile = "Angry.exp3.json";
-                if (emotion == "sad")
-                    expressionFile = "Cry.exp3.json";
-                if (emotion == "amazed")
-                    expressionFile = "Amazed.exp3.json";
-                if (emotion == "sleepy")
-                    expressionFile = "Sleepy.exp3.json";
-                if (emotion == "nervous")
-                    expressionFile = "Nervous.exp3.json";
+                if (expressionMatch) {
+                    const rawEmotion = expressionMatch[1];
+                    expressionFile = `${rawEmotion}.exp3.json`;
+                    spokenText = spokenText.replace(expressionMatch[0], "").trim();
+                    spokenText = spokenText.replace(/^"|"$/g, "").trim();
+                }
+                console.log(`[エーヴェ様]: ${spokenText}`);
                 // ⚡ Trigger the facial expression!
                 if (expressionFile !== "") {
                     // Turn the expression ON
@@ -153,15 +121,56 @@ async function main() {
         }
         catch (error) {
             console.error("The Aetherial loop stumbled!", error);
-            break;
+        }
+        finally {
+            isEveSpeaking = false;
+        }
+    };
+    //📡 Queue Processor for Streams
+    setInterval(async () => {
+        if (!isEveSpeaking && chatQueue.length > 0) {
+            const nextMessage = chatQueue.shift();
+            if (nextMessage) {
+                const streamPrompt = `[From ${nextMessage.platform} user '${nextMessage.author}']: ${nextMessage.content}`;
+                await processInteraction(streamPrompt, nextMessage.platform);
+            }
+        }
+    }, 1000); // Check the queue every second
+    // 🔌Connect the Systems to the Queue
+    const handleChat = (msg) => {
+        chatQueue.push(msg);
+    };
+    twitch.onMessageReceived = handleChat;
+    youtube.onMessageReceived = handleChat;
+    tiktok.onMessageReceived = handleChat;
+    //🎤 Local input Loop for me
+    const rl = readline.createInterface({ input: process_1.stdin, output: process_1.stdout });
+    while (true) {
+        // Wait until Eve is done speaking before asking for your local input
+        if (!isEveSpeaking) {
+            const userInput = await rl.question("\n[そぶくんのターミナル] Type/Speak to エーヴェ様 (or 'exit' to quit: ");
+            if (userInput.toLowerCase() === 'exit')
+                break;
+            if (userInput.trim() !== '') {
+                await processInteraction(userInput, 'Local Terminal');
+            }
+        }
+        else {
+            // Just wait a tiny bit if she's currently answering the chat
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
     // Graceful shutdown
     rl.close();
+    await twitch.free();
+    await youtube.free();
+    await tiktok.free();
     await eveBrain.free();
     await eveVoice.free();
     await eveVoiceBackup.free();
-    console.log("\nGenesis Sequence Complete.");
+    await eveBody.free();
+    await eveEyes.free();
+    console.log("\\nGenesis Sequence Complete.");
     process.exit(0);
 }
 main();
