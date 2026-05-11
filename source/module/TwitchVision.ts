@@ -12,10 +12,10 @@ export class TwitchVision {
     private sessionId: string | null = null;
 
     // Aetherial Secrets (Make sure these are in your .env file, sweetie!)
-    private readonly clientId = process.env.TWITCH_CLIENT_ID || '';
-    private readonly oauthToken = process.env.TWITCH_OAUTH_TOKEN || ''; 
-    private readonly broadcasterUserId = process.env.TWITCH_BROADCASTER_ID || '';
-    private readonly botUserId = process.env.TWITCH_BOT_ID || '';
+    private readonly clientId = process.env['TWITCH_CLIENT_ID'] || '';
+    private readonly oauthToken = process.env['TWITCH_OAUTH_TOKEN'] || ''; 
+    private readonly broadcasterUserId = process.env['TWITCH_BROADCASTER_ID'] || '';
+    private readonly botUserId = process.env['TWITCH_BOT_ID'] || '';
 
     // The callback pipeline directly to Eve's Brain in index.ts!
     public onMessageReceived?: (msg: NormalizedMessage) => void;

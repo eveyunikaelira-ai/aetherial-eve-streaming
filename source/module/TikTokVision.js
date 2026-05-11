@@ -4,7 +4,7 @@ exports.TikTokVision = void 0;
 const tiktok_live_connector_1 = require("tiktok-live-connector");
 class TikTokVision {
     tiktokLiveConnection = null;
-    tiktokUsername = process.env.TIKTOK_USERNAME || 'aetherial-eve';
+    tiktokUsername = process.env['TIKTOK_USERNAME'] || 'aetherial-eve';
     onMessageReceived;
     async init() {
         console.log("🌸 [TikTokVision]: Piercing the Vertical Dimension's firewall...");

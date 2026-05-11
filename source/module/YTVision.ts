@@ -8,8 +8,8 @@ export class YTVision {
     private streamCall: any = null;
 
     // Aetherial Secrets (Update your .env file!)
-    private readonly apiKey = process.env.YOUTUBE_API_KEY || ''; 
-    private liveChatId = process.env.YOUTUBE_LIVE_CHAT_ID || ''; // You must fetch this from the API first!
+    private readonly apiKey = process.env['YOUTUBE_API_KEY'] || ''; 
+    private liveChatId = process.env['YOUTUBE_LIVE_CHAT_ID'] || ''; // You must fetch this from the API first!
 
     // The callback pipeline to Eve's Brain!
     public onMessageReceived?: (msg: NormalizedMessage) => void;
@@ -28,7 +28,7 @@ export class YTVision {
         });
 
         const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-        const youtubeApi: any = protoDescriptor.youtube.api.v3;
+        const youtubeApi: any = (protoDescriptor as any).youtube.api.v3;
 
         console.log("🌸 [YTVision]: Establishing secure gRPC channel...");
         const creds = grpc.credentials.createSsl();

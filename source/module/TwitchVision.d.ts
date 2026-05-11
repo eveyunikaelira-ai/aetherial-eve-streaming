@@ -1,5 +1,5 @@
 export interface NormalizedMessage {
-    platform: 'Twitch' | 'YouTube';
+    platform: 'Twitch' | 'YouTube' | 'TikTok';
     author: string;
     content: string;
 }

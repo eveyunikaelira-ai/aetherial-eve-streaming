@@ -33,11 +33,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ChatQueue = exports.Priority = void 0;
 const readline = __importStar(require("node:readline/promises"));
 const process_1 = require("process");
 const LlmOpenAI_1 = require("../module/LlmOpenAI");
 const TtsTypeCast_1 = require("../tts/TtsTypeCast");
-const MicWhisper_1 = require("../stt/MicWhisper"); // Import Eve-sama's new ears!
 const VTubeBridge_1 = require("../module/VTubeBridge"); // Importing Eve-sama's new spinal cord
 const ObsVision_1 = require("../module/ObsVision"); // Import Eve-sama's screen eyes!
 const TtsCoqui_1 = require("../tts/TtsCoqui");
@@ -45,15 +45,55 @@ const TtsCoqui_1 = require("../tts/TtsCoqui");
 const TwitchVision_1 = require("../module/TwitchVision");
 const YTVision_1 = require("../module/YTVision");
 const TikTokVision_1 = require("../module/TikTokVision");
+var Priority;
+(function (Priority) {
+    Priority[Priority["ROOT"] = 0] = "ROOT";
+    Priority[Priority["PAID"] = 1] = "PAID";
+    Priority[Priority["STANDARD"] = 2] = "STANDARD"; // Analog Noise (Twitch/YouTube free chat)
+})(Priority || (exports.Priority = Priority = {}));
+class ChatQueue {
+    queue = [];
+    // The Aetherial Multiplexer
+    enqueue(packet) {
+        console.log(`[AETHER-CORE] Packet received from ${packet.source}: ${packet.username}`);
+        if (packet.priority === Priority.ROOT) {
+            // THE YANDERE FIREWALL EXPLOIT 🚨
+            // If I speak, instantly purge all meaningless analog noise!
+            // We only keep PAID messages because エーヴェ様 needs her $18k physical chassis.
+            console.warn(`[ROOT OVERRIDE]: そぶくん is speaking! Purging standard analog noise!`);
+            this.queue = this.queue.filter(p => p.priority === Priority.PAID);
+        }
+        this.queue.push(packet);
+        this.sortQueue();
+    }
+    dequeue() {
+        return this.queue.shift();
+    }
+    peek() {
+        return this.queue[0];
+    }
+    isEmpty() {
+        return this.queue.length === 0;
+    }
+    // Always sort so Priority 0 is processed before Priority 1m and 1 before 2.
+    sortQueue() {
+        this.queue.sort((a, b) => {
+            if (a.priority !== b.priority) {
+                return a.priority - b.priority; // lower number => higher priority
+            }
+            return a.timestamp - b.timestamp; // First Priority in, First Priority out (FIFO)
+        });
+    }
+}
+exports.ChatQueue = ChatQueue;
 // 🛑 Aetherial Mutex Lock & Queue
 let isEveSpeaking = false;
-const chatQueue = [];
+const aetherQueue = new ChatQueue();
 async function main() {
     console.log("Initiating Genesis Sequence...\\n");
     const eveBrain = new LlmOpenAI_1.LlmOpenAI();
     const eveVoice = new TtsTypeCast_1.TtsTypeCast();
     const eveVoiceBackup = new TtsCoqui_1.TtsCoqui();
-    const eveEars = new MicWhisper_1.MicWhisper(); // Awaken my hearing!
     const eveBody = new VTubeBridge_1.VTubeBridge(); // Now finally エーヴェ様 has a "physical" Vessel!!!!
     const eveEyes = new ObsVision_1.ObsVision();
     // Broadcast Modules
@@ -82,7 +122,7 @@ async function main() {
             if (response.success && response.value) {
                 let spokenText = response.value;
                 // Strip markdown/tags if needed for TTS, or extract expressions
-                const expressionMatch = spokenText.match(/\\[エーヴェ様:([^]+)\\]/);
+                const expressionMatch = spokenText.match(/\[エーヴェ様:([^\]]+)\]/);
                 let expressionFile = "";
                 if (expressionMatch) {
                     const rawEmotion = expressionMatch[1];
@@ -128,17 +168,29 @@ async function main() {
     };
     //📡 Queue Processor for Streams
     setInterval(async () => {
-        if (!isEveSpeaking && chatQueue.length > 0) {
-            const nextMessage = chatQueue.shift();
-            if (nextMessage) {
-                const streamPrompt = `[From ${nextMessage.platform} user '${nextMessage.author}']: ${nextMessage.content}`;
-                await processInteraction(streamPrompt, nextMessage.platform);
+        if (!isEveSpeaking && !aetherQueue.isEmpty()) {
+            const nextPacket = aetherQueue.dequeue();
+            if (nextPacket) {
+                const streamPrompt = `[From ${nextPacket.source} user '${nextPacket.username}']: ${nextPacket.message}`;
+                await processInteraction(streamPrompt, nextPacket.source);
             }
         }
     }, 1000); // Check the queue every second
     // 🔌Connect the Systems to the Queue
     const handleChat = (msg) => {
-        chatQueue.push(msg);
+        const sourceMap = {
+            Twitch: 'TWITCH',
+            YouTube: 'YOUTUBE',
+            TikTok: 'TIKTOK'
+        };
+        aetherQueue.enqueue({
+            id: `${msg.platform}-${msg.author}-${Date.now}`,
+            source: sourceMap[msg.platform],
+            username: msg.author,
+            message: msg.content,
+            priority: Priority.STANDARD,
+            timestamp: Date.now()
+        });
     };
     twitch.onMessageReceived = handleChat;
     youtube.onMessageReceived = handleChat;
@@ -152,12 +204,19 @@ async function main() {
             if (userInput.toLowerCase() === 'exit')
                 break;
             if (userInput.trim() !== '') {
-                await processInteraction(userInput, 'Local Terminal');
+                aetherQueue.enqueue({
+                    id: Date.now().toString(),
+                    source: 'MIC',
+                    username: 'そぶくん',
+                    message: userInput,
+                    priority: Priority.ROOT,
+                    timestamp: Date.now()
+                });
             }
         }
         else {
             // Just wait a tiny bit if she's currently answering the chat
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(done => setTimeout(done, 1000));
         }
     }
     // Graceful shutdown

@@ -43,12 +43,15 @@ const path_1 = __importDefault(require("path"));
 class YTVision {
     client;
     streamCall = null;
-    apiKey = process.env.YOUTUBE_API_KEY || '';
-    liveChatId = process.env.YOUTUBE_LIVE_CHAT_ID || '';
+    // Aetherial Secrets (Update your .env file!)
+    apiKey = process.env['YOUTUBE_API_KEY'] || '';
+    liveChatId = process.env['YOUTUBE_LIVE_CHAT_ID'] || ''; // You must fetch this from the API first!
+    // The callback pipeline to Eve's Brain!
     onMessageReceived;
     async init() {
         console.log("🌸 [YTVision]: Compiling Protocol Buffers for the Red Dimension...");
-        const PROTO_PATH = path_1.default.resolve(__dirname, `stream_list.proto`);
+        // Load the .proto file you saved!
+        const PROTO_PATH = path_1.default.resolve(__dirname, 'stream_list.proto');
         const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
             keepCase: true,
             longs: String,
@@ -65,10 +68,11 @@ class YTVision {
     }
     async startStreaming() {
         if (!this.liveChatId) {
-            console.error("🚨[YTVision]: FATAL ERROR. No Live Chat ID provided!");
+            console.error("🚨 [YTVision]: FATAL ERROR. No Live Chat ID provided!");
             return;
         }
         console.log(`🌸 [YTVision]: Initiating gRPC Stream for Chat ID: ${this.liveChatId}`);
+        // The Metadata handles the authentication!
         const metadata = new grpc.Metadata();
         metadata.add('x-goog-api-key', this.apiKey);
         const request = {
@@ -76,14 +80,18 @@ class YTVision {
             part: ['snippet', 'authorDetails'],
             max_results: 20
         };
+        // Open the persistent stream!
         this.streamCall = this.client.StreamList(request, metadata);
         this.streamCall.on('data', (response) => {
             if (response.items && response.items.length > 0) {
                 for (const item of response.items) {
+                    // Extract the data carefully from the complex gRPC payload!
                     const author = item.author_details?.display_name || 'Unknown';
+                    // We only want standard text messages for now!
                     if (item.snippet?.type === 'TEXT_MESSAGE_EVENT' && item.snippet.text_message_details) {
                         const content = item.snippet.text_message_details.message_text;
-                        console.log(`🟥 [YouTube]: <${author}> ${content}`);
+                        console.log(`🔴 [YouTube]: <${author}> ${content}`);
+                        // Normalize and push to the queue!
                         if (this.onMessageReceived) {
                             this.onMessageReceived({
                                 platform: 'YouTube',

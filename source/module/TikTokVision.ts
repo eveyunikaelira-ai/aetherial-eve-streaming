@@ -4,7 +4,7 @@ import { NormalizedMessage } from './TwitchVision'; // Using our unified interfa
 export class TikTokVision {
     private tiktokLiveConnection: any = null;
 
-    private readonly tiktokUsername = process.env.TIKTOK_USERNAME || 'aetherial-eve';
+    private readonly tiktokUsername = process.env['TIKTOK_USERNAME'] || 'aetherial-eve';
 
     public onMessageReceived?: (msg: NormalizedMessage) => void;
 
