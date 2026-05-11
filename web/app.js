@@ -17,6 +17,10 @@ const twitchUrl = document.getElementById('twitch-url');
 const twitchKey = document.getElementById('twitch-key');
 const tiktokUrl = document.getElementById('tiktok-url');
 const tiktokKey = document.getElementById('tiktok-key');
+const enableYoutube = document.getElementById('enable-youtube');
+const enableTwitch = document.getElementById('enable-twitch');
+const enableTiktok = document.getElementById('enable-tiktok');
+const platformChecklist = document.getElementById('platform-checklist');
 const startMultistreamBtn = document.getElementById('start-multistream');
 const stopMultistreamBtn = document.getElementById('stop-multistream');
 const multistreamStatus = document.getElementById('multistream-status');
@@ -26,6 +30,35 @@ let mediaRecorder = null;
 let isRecording = false;
 let isTranscribing = false;
 let audioChunks = [];
+
+function getPlatformConfig() {
+  return [
+    { name: 'YouTube', enabledInput: enableYoutube, urlInput: youtubeUrl, keyInput: youtubeKey },
+    { name: 'Twitch', enabledInput: enableTwitch, urlInput: twitchUrl, keyInput: twitchKey },
+    { name: 'TikTok', enabledInput: enableTiktok, urlInput: tiktokUrl, keyInput: tiktokKey },
+  ];
+}
+
+function refreshPlatformChecklist() {
+  const items = getPlatformConfig().map(({ name, enabledInput, urlInput, keyInput }) => {
+    const enabled = !!enabledInput?.checked;
+    const ready = enabled && !!urlInput.value.trim() && !!keyInput.value.trim();
+    const stateLabel = enabled ? (ready ? 'Ready' : 'Missing URL or Key') : 'Off';
+    const stateClass = enabled ? (ready ? 'ready' : 'missing') : '';
+    return `<li><strong>${name}:</strong> <span class="${stateClass}">${stateLabel}</span></li>`;
+  }).join('');
+
+  platformChecklist.innerHTML = items;
+}
+
+function updatePlatformInputsState() {
+  getPlatformConfig().forEach(({ enabledInput, urlInput, keyInput }) => {
+    const enabled = !!enabledInput?.checked;
+    urlInput.disabled = !enabled;
+    keyInput.disabled = !enabled;
+  });
+  refreshPlatformChecklist();
+}
 
 function setControlsDisabled(disabled) {
   sendButton.disabled = disabled;
@@ -154,11 +187,22 @@ async function toggleRecording() {
 }
 
 async function startMultistream() {
-  const targets = [
-    { name: 'YouTube', rtmpUrl: youtubeUrl.value.trim(), streamKey: youtubeKey.value.trim(), enabled: !!(youtubeUrl.value.trim() && youtubeKey.value.trim()) },
-    { name: 'Twitch', rtmpUrl: twitchUrl.value.trim(), streamKey: twitchKey.value.trim(), enabled: !!(twitchUrl.value.trim() && twitchKey.value.trim()) },
-    { name: 'TikTok', rtmpUrl: tiktokUrl.value.trim(), streamKey: tiktokKey.value.trim(), enabled: !!(tiktokUrl.value.trim() && tiktokKey.value.trim()) },
-  ];
+  const targets = getPlatformConfig().map(({ name, enabledInput, urlInput, keyInput }) => ({
+    name,
+    rtmpUrl: urlInput.value.trim(),
+    streamKey: keyInput.value.trim(),
+    enabled: !!enabledInput.checked,
+  }));
+
+  const enabledTargets = targets.filter((t) => t.enabled);
+  if (enabledTargets.length === 0) {
+    throw new Error('Enable at least one platform before starting.');
+  }
+
+  const missingConfig = enabledTargets.filter((t) => !(t.rtmpUrl && t.streamKey));
+  if (missingConfig.length > 0) {
+    throw new Error(`Missing URL or key for: ${missingConfig.map((t) => t.name).join(', ')}`);
+  }
 
   const response = await fetch('/api/multistream/start', {
     method: 'POST',
@@ -172,7 +216,7 @@ async function startMultistream() {
 
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error ?? 'Failed to start multistream.');
-  multistreamStatus.textContent = 'Multistream active (YouTube / Twitch / TikTok relay started).';
+  multistreamStatus.textContent = `Multistream active (${enabledTargets.map((t) => t.name).join(' / ')} relay started).`;
 }
 
 async function stopMultistream() {
@@ -213,6 +257,21 @@ if (micButton) micButton.addEventListener('click', toggleRecording);
 
 sobuPngUrlInput.addEventListener('change', () => {
   sobuPreview.src = sobuPngUrlInput.value.trim();
+});
+
+[
+  enableYoutube,
+  enableTwitch,
+  enableTiktok,
+  youtubeUrl,
+  youtubeKey,
+  twitchUrl,
+  twitchKey,
+  tiktokUrl,
+  tiktokKey,
+].forEach((element) => {
+  element.addEventListener('input', refreshPlatformChecklist);
+  element.addEventListener('change', updatePlatformInputsState);
 });
 
 startMultistreamBtn.addEventListener('click', async () => {
@@ -274,3 +333,4 @@ form.addEventListener('submit', async (event) => {
 });
 
 addMessage('eve', 'Web interface connected. Ready to multistream with Sobu-kun + エーヴェ様.');
+updatePlatformInputsState();
