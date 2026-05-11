@@ -48,6 +48,21 @@
 
     <section class="multistream-panel">
       <h2>Multistream Control</h2>
+      <p class="panel-help">Set your source once, then toggle each platform and launch all three together.</p>
+      <div class="platform-toggles" role="group" aria-label="Streaming platforms">
+        <label class="platform-toggle youtube">
+          <input id="enable-youtube" type="checkbox" checked>
+          <span>YouTube</span>
+        </label>
+        <label class="platform-toggle twitch">
+          <input id="enable-twitch" type="checkbox" checked>
+          <span>Twitch</span>
+        </label>
+        <label class="platform-toggle tiktok">
+          <input id="enable-tiktok" type="checkbox" checked>
+          <span>TikTok</span>
+        </label>
+      </div>
       <div class="input-grid">
         <input id="input-url" type="text" placeholder="Input URL (OBS output / RTMP / SRT / media file)">
         <input id="youtube-url" type="text" placeholder="YouTube RTMP URL">
@@ -61,6 +76,7 @@
         <button id="start-multistream" type="button">Start Multistream</button>
         <button id="stop-multistream" type="button" class="danger">Stop</button>
       </div>
+      <ul id="platform-checklist" class="platform-checklist"></ul>
       <p id="multistream-status">Multistream idle.</p>
     </section>
   </main>
